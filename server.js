@@ -9,7 +9,8 @@ const { setServers } = require('node:dns/promises');
 setServers(['1.1.1.1', '8.8.8.8']);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+const allowedOrigin = 'https://ngls-front-pmuzgd1bf-badr16.vercel.app';
+app.use(cors({ origin: allowedOrigin }));
 
 
 app.use('/uploads', express.static('uploads'));
