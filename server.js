@@ -9,16 +9,17 @@ const { setServers } = require('node:dns/promises');
 setServers(['1.1.1.1', '8.8.8.8']);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const allowedOrigin = 'https://ngls-front-pmuzgd1bf-badr16.vercel.app';
-const corsOptions = {
-    origin: allowedOrigin,
-    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','Authorization','Accept','Origin','X-Requested-With'],
-    credentials: true,
-    optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use(cors());
+app.options('*', cors());
+
+// Allow all origins explicitly for CORS
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
 
 
 app.use('/uploads', express.static('uploads'));
