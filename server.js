@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
@@ -5,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const connectDb = require('./Config/connect');
-require('dotenv').config();
+
 
 const { setServers } = require('node:dns/promises');
 setServers(['1.1.1.1', '8.8.8.8']);
@@ -25,7 +26,7 @@ app.use('/api', require('./Routes/loginRoute'));
 app.use('/api', require('./Routes/ancsRoute'));
 app.use('/api', require('./Routes/videosRoute'));
 
-async function StartServer() {
+ /*async function StartServer() {
     try {
         await connectDb();
         app.listen(port, () => {
@@ -35,6 +36,22 @@ async function StartServer() {
         console.error('Failed to start server:', error.message);
         process.exit(1);
     }
+} */
+app.use(async (req, res, next) => {
+    try {
+        await connectDb();
+        next();
+    } catch (error) {
+        console.error('Database Connection Error:', error);
+        res.status(500).json({ error: 'Database connection failed' });
+    }
+});
+if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Server running locally on port ${port}`);
+    });
 }
 
-StartServer();
+/* StartServer(); */
+module.exports = app;
