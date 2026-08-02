@@ -1,42 +1,18 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-
-const app = express();
-const port = process.env.PORT || 3000;
-
 const connectDb = require('./Config/connect');
 
+const app = express();
 
-const { setServers } = require('node:dns/promises');
-setServers(['1.1.1.1', '8.8.8.8']);
-
-// Allow all origins
+// 1. Enable CORS globally (handles both standard requests and preflight OPTIONS automatically)
 app.use(cors());
 
-// Handle preflight requests
-app.options('*', cors());
-
+// 2. Parse incoming request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static('uploads'));
-app.use('/api', require('./Routes/registerRoute'));
-app.use('/api', require('./Routes/loginRoute'));
-app.use('/api', require('./Routes/ancsRoute'));
-app.use('/api', require('./Routes/videosRoute'));
-
- /*async function StartServer() {
-    try {
-        await connectDb();
-        app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
-        });
-    } catch (error) {
-        console.error('Failed to start server:', error.message);
-        process.exit(1);
-    }
-} */
+// 3. Database Connection Middleware (MUST BE BEFORE ROUTES)
 app.use(async (req, res, next) => {
     try {
         await connectDb();
@@ -46,6 +22,15 @@ app.use(async (req, res, next) => {
         res.status(500).json({ error: 'Database connection failed' });
     }
 });
+
+// 4. Routes
+app.use('/uploads', express.static('uploads'));
+app.use('/api', require('./Routes/registerRoute'));
+app.use('/api', require('./Routes/loginRoute'));
+app.use('/api', require('./Routes/ancsRoute'));
+app.use('/api', require('./Routes/videosRoute'));
+
+// 5. Local development execution
 if (process.env.NODE_ENV !== 'production') {
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
@@ -53,5 +38,4 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-/* StartServer(); */
 module.exports = app;
