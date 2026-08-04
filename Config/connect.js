@@ -1,10 +1,22 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+// Safe singleton connection helper for serverless environments.
+let isConnected = false;
+
 const connectDb = async () => {
+    if (isConnected && mongoose.connection.readyState === 1) {
+        return mongoose.connection;
+    }
     try {
-        await mongoose.connect(process.env.DATABASE_URI)
+        await mongoose.connect(process.env.DATABASE_URI, {
+            // Recommended options
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        isConnected = true;
         console.log('MongoDB connected successfully');
+
         // Cleanup: remove any lingering unique index on `email` that may cause
         // E11000 duplicate key errors when email is omitted (null). This can
         // happen if an older schema created a unique index for email.
@@ -26,9 +38,14 @@ const connectDb = async () => {
         } catch (idxErr) {
             console.warn('Index check skipped or failed:', idxErr.message);
         }
-    }catch (error) {
+
+        return mongoose.connection;
+    } catch (error) {
         console.error('MongoDB connection failed:', error.message);
-        process.exit(1);
+        // Throw instead of exiting so serverless platform can return errors
+        // and middleware can handle them without killing the process.
+        throw error;
     }
-}
+};
+
 module.exports = connectDb;
