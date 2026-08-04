@@ -25,6 +25,13 @@ app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Lightweight health route: does not touch the DB so it's safe for preflight
+// and early checks on serverless platforms.
+app.get('/api/health', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.status(200).json({ status: 'ok' });
+});
+
 // 3. Database Connection Middleware (MUST BE BEFORE ROUTES)
 app.use(async (req, res, next) => {
     try {
