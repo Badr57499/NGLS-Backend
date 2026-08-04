@@ -7,6 +7,16 @@ const app = express();
 
 // 1. Enable CORS globally (handles both standard requests and preflight OPTIONS automatically)
 app.use(cors());
+app.options('*', cors());
+
+// Allow all origins explicitly for CORS
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
 
 // 2. Parse incoming request bodies
 app.use(express.json());
