@@ -1,4 +1,4 @@
-require('dotenv').config();
+/* require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDb = require('./Config/connect');
@@ -51,6 +51,64 @@ app.use('/api', require('./Routes/ancsRoute'));
 app.use('/api', require('./Routes/videosRoute'));
 
 // 5. Local development execution
+if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Server running locally on port ${port}`);
+    });
+}
+
+module.exports = app; */
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const connectDb = require('./Config/connect');
+
+const app = express();
+
+// Use the standard cors package (it handles preflights, OPTIONS, and headers properly)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Body Parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health Check Route
+app.get('/api/health', (req, res) => {
+    return res.status(200).json({ status: 'ok' });
+});
+
+// Database Connection Middleware
+app.use(async (req, res, next) => {
+    try {
+        await connectDb();
+        next();
+    } catch (error) {
+        console.error('Database Connection Error:', error);
+        // Explicitly send CORS headers even on DB failure responses
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.status(500).json({ error: 'Database connection failed', details: error.message });
+    }
+});
+
+// Routes
+app.use('/api', require('./Routes/registerRoute'));
+app.use('/api', require('./Routes/loginRoute'));
+app.use('/api', require('./Routes/ancsRoute'));
+app.use('/api', require('./Routes/videosRoute'));
+
+// Global Express Error Handler (Catches route exceptions and ensures headers are attached)
+app.use((err, req, res, next) => {
+    console.error('Server Error:', err);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.status(500).json({ error: 'Internal Server Error', message: err.message });
+});
+
+// Local Development Engine
 if (process.env.NODE_ENV !== 'production') {
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
