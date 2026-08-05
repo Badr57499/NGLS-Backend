@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+ /* const mongoose = require('mongoose');
 require('dotenv').config();
 
 // Safe singleton connection helper for serverless environments.
@@ -47,5 +47,41 @@ const connectDb = async () => {
         throw error;
     }
 };
+
+module.exports = connectDb; */ 
+// Config/connect.js
+const mongoose = require('mongoose');
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectDb() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+    };
+
+    cached.promise = mongoose.connect(process.env.DATABASE_URI, opts).then((mongoose) => {
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+}
 
 module.exports = connectDb;
